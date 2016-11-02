@@ -13,12 +13,13 @@ use iForm\Auth\iFormTokenResolver;
 
 //instantiate iFormTokenResolver with required parameters and call getToken() method
 
-$url = "https://SERVER_NAME.iformbuilder.com/exzact/api/oauth/token";
-$client = "XXXXXX";
-$secret = "XXXXXX";
+$config = [
+  'url' => "https://SERVER_NAME.iformbuilder.com/exzact/api/oauth/token";
+  'client' => "XXXXXX";
+  'secret' => "XXXXXX";
+];
 
-$token = (new iFormTokenResolver($url, $client, $secret))->getToken(); 
-
+$token = (new iFormTokenResolver($config))->getToken(); 
 
 </pre>
 
