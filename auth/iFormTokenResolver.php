@@ -1,8 +1,7 @@
 <?php namespace Iform\Auth;
 
-use Iform\Auth\RequestHandler;
-use Iform\Auth\Encoder;
-use Iform\Auth\Jwt;
+use Iform\Http\ZerionApiRequest;
+use Iform\Auth\Token\Jwt;
 
 
 /**
@@ -13,12 +12,6 @@ use Iform\Auth\Jwt;
  */
 class iFormTokenResolver {
 
-    /**
-     * This value has a maximum of 10 minutes
-     *
-     * @var int
-     */
-    private static $exp = 600;
     /**
      * Credentials - secret.  See instructions for acquiring credentials
      *
@@ -36,7 +29,7 @@ class iFormTokenResolver {
      *
      * @var string
      */
-    private $endpoint;
+    private $url;
     /**
      * Jwt class
      *
@@ -51,22 +44,20 @@ class iFormTokenResolver {
     private $request = null;
 
     /**
-     * @param string $url
-     * @param string $client
-     * @param string $secret
-     * @param null   $requester Dependency
-     * @param null   $jwt       Dependency
+     * @param array $config
+     * @param null  $requester Dependency
+     * @param null  $jwt       Dependency
      *
      * @throws \Exception
      */
-    function __construct($url, $client, $secret, $requester = null, $jwt = null)
+    function __construct(array $config, $requester = null, $jwt = null)
     {
-        $this->client = $client;
-        $this->secret = $secret;
-        $this->endpoint = trim($url);
+        $this->client = $config['client'];
+        $this->secret = $config['secret'];
+        $this->url = trim($config['url']);
 
-        $this->request = $requester ?: new RequestHandler();
-        $this->jwt = $jwt ?: new Jwt(new Encoder());
+        $this->request = $requester ?: new ZerionApiRequest();
+        $this->jwt = $jwt ?: new Jwt();
     }
 
     /**
@@ -78,7 +69,7 @@ class iFormTokenResolver {
         $exp = 600;
         $payload = array(
             "iss" => $this->client,
-            "aud" => $this->endpoint,
+            "aud" => $this->url,
             "exp" => $iat + $exp,
             "iat" => $iat
         );
@@ -87,7 +78,7 @@ class iFormTokenResolver {
     }
 
     /**
-     * API OAuth endpoint
+     * API OAuth url
      *
      * @param string $url
      *
@@ -103,20 +94,21 @@ class iFormTokenResolver {
      */
     private function validateEndpoint()
     {
-        if (empty($this->endpoint) || ! $this->isZerionOauth($this->endpoint)) {
+        if (empty($this->url) || ! $this->isZerionOauth($this->url)) {
             throw new \Exception('Invalid url: Valid format https://SERVER_NAME.iformbuilder.com/exzact/api/oauth/token');
         }
     }
 
     /**
      * Build query parameter string
+     *
      * @return string
      */
     private function getTokenParams()
     {
-        return http_build_query(
-            array("grant_type" => "urn:ietf:params:oauth:grant-type:jwt-bearer",
-                  "assertion"  => $this->getAssertion())
+        return array(
+            "grant_type" => "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            "assertion"  => $this->getAssertion()
         );
     }
 
@@ -129,8 +121,10 @@ class iFormTokenResolver {
     {
         try {
             $this->validateEndpoint();
-            $result = $this->validate($this->request->create($this->endpoint)
-                                                    ->with($this->getTokenParams()));
+
+            $result = $this->extractAccessToken(
+                $this->request->post($this->url, $this->getTokenParams())
+            );
         } catch (\Exception $e) {
             $result = $e->getMessage();
         }
@@ -143,7 +137,7 @@ class iFormTokenResolver {
      *
      * @return string token || error msg
      */
-    private function validate($results)
+    private function extractAccessToken($results)
     {
         $token = json_decode($results, true);
 

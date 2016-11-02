@@ -1,6 +1,6 @@
-<?php namespace Iform\Auth;
+<?php namespace Iform\Auth\Token;
 
-use iForm\Auth\Encoder;
+use Iform\Auth\Token\Encoder;
 
 class Jwt {
 
@@ -43,6 +43,14 @@ class Jwt {
         return $formatted;
     }
 
+    /**
+     * Produce segments
+     * @param $payload
+     * @param $key
+     * @param $alg
+     *
+     * @return string
+     */
     private function segments($payload, $key, $alg)
     {
         $segments = [];
@@ -53,11 +61,21 @@ class Jwt {
         return join(".", $segments);
     }
 
+    /**
+     * @param $alg
+     *
+     * @return mixed
+     */
     private function header($alg)
     {
         return $this->encoder->base64UrlEncode(json_encode(array('typ' => 'JWT', 'alg' => $alg)));
     }
 
+    /**
+     * @param $payload
+     *
+     * @return mixed
+     */
     private function claimSet($payload)
     {
         if (! $this->validateClaimSet($payload)) throw new \InvalidArgumentException("invalid claim set");
@@ -65,6 +83,11 @@ class Jwt {
         return $this->encoder->base64UrlEncode(json_encode($payload));
     }
 
+    /**
+     * @param $payload
+     *
+     * @return bool
+     */
     private function validateClaimSet($payload)
     {
         $required = array("iss", "aud", "exp", "iat");

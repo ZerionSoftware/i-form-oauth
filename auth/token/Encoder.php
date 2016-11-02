@@ -1,4 +1,4 @@
-<?php namespace Iform\Auth;
+<?php namespace Iform\Auth\Token;
 
 class Encoder {
 
@@ -12,7 +12,6 @@ class Encoder {
     public function base64UrlEncode($input)
     {
         return rtrim(strtr(base64_encode($input), '+/', '-_'), '=');
-//        return str_replace("=", "", strtr(base64_encode($input), '+/', '+_'));
     }
 
     /**
