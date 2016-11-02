@@ -45,19 +45,17 @@ class iFormTokenResolver {
 
     /**
      * @param array $config
-     * @param null  $requester Dependency
-     * @param null  $jwt       Dependency
      *
      * @throws \Exception
      */
-    function __construct(array $config, $requester = null, $jwt = null)
+    function __construct(array $config)
     {
         $this->client = $config['client'];
         $this->secret = $config['secret'];
         $this->url = trim($config['url']);
 
-        $this->request = $requester ?: new ZerionApiRequest();
-        $this->jwt = $jwt ?: new Jwt();
+        $this->request = isset($config['request']) ? $config['request'] : new ZerionApiRequest();
+        $this->jwt = isset($config['jwt']) ? $config['jwt'] : new Jwt();
     }
 
     /**
@@ -139,9 +137,10 @@ class iFormTokenResolver {
      */
     private function extractAccessToken($results)
     {
-        $token = json_decode($results, true);
+        $results = json_decode($results, true);
+        $body = json_decode($results['body'], true);
 
-        return isset($token['access_token']) ? $token['access_token'] : $token['error'];
+        return isset($body['access_token']) ? $body['access_token'] : $body['error'];
     }
 }
 
